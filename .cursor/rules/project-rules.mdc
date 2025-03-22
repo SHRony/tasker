@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- Don't edit existing type definatinos, instead try writing the rest of the codes based on those type definations.
+- If need to edit a type defination ask user to give permission to do so.
+- For multiple types or components in a same file the parent should be on the top and then the childs. So that the code can be read from top to down and when need to take a deeper look into a specific child then can scroll down.
+- All the types should be declared in the types.ts file.
