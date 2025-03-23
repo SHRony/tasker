@@ -71,4 +71,9 @@ export type AIResponse = {
         arguments: string;
     };
     error?: string;
+}
+
+export interface ProcessedFile {
+    name: string;
+    text: string;
 } 

@@ -24,3 +24,55 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ant Design Steps Customization
+.ant-steps {
+    --primary-color: #4096ff;
+}
+
+.ant-steps .ant-steps-item-icon {
+    width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+    border: none !important;
+    background: #e5e7eb !important;
+    color: #6b7280 !important;
+}
+
+.ant-steps .ant-steps-item-process .ant-steps-item-icon {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+.ant-steps .ant-steps-item-finish .ant-steps-item-icon {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+.ant-steps .ant-steps-item-title {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+    padding-block: 8px !important;
+}
+
+.ant-steps .ant-steps-item-finish .ant-steps-item-title {
+    color: #4b5563 !important;
+}
+
+.ant-steps .ant-steps-item-process .ant-steps-item-title {
+    color: var(--primary-color) !important;
+    font-weight: 500 !important;
+}
+
+.ant-steps .ant-steps-item-wait .ant-steps-item-title {
+    color: #6b7280 !important;
+}
+
+.ant-steps-item-tail::after {
+    height: 2px !important;
+    background: #e5e7eb !important;
+}
+
+.ant-steps .ant-steps-item-finish .ant-steps-item-tail::after {
+    background: var(--primary-color) !important;
+} */

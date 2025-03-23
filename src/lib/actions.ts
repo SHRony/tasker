@@ -18,10 +18,11 @@ export interface GenerateResponseOptions {
 
 export async function generateResponse(
     prompt: string,
-    schema?: Record<string, any>,
+    schema?: Record<string, unknown>,
     options: GenerateResponseOptions = {}
 ): Promise<string> {
     try {
+
         const model = genAI.getGenerativeModel({ 
             model: 'gemini-1.5-flash',
             generationConfig: {
@@ -36,7 +37,7 @@ export async function generateResponse(
         const fullPrompt = schema 
             ? `${prompt}\n\nPlease provide your response in the following JSON format:\n${JSON.stringify(schema, null, 2)}`
             : prompt;
-
+        console.log(fullPrompt);
         // Generate response
         const result = await model.generateContent(fullPrompt);
         const response = await result.response;
@@ -57,7 +58,7 @@ export async function generateResponse(
                 return JSON.stringify({ response: text });
             }
         }
-
+        console.log(text);
         return text;
     } catch (error) {
         console.error('AI Generation Error:', error);

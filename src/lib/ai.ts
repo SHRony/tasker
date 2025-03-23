@@ -24,8 +24,8 @@ function validateOptions(options: GenerateResponseOptions): string | null {
 
 export async function generateResponse(
     prompt: string,
-    schema?: Record<string, any>,
-    options: GenerateResponseOptions = {}
+    options: GenerateResponseOptions = {},
+    schema?: Record<string, unknown>
 ): Promise<string> {
     // Validate options on the client side first
     console.log(prompt);

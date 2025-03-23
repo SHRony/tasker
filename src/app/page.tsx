@@ -1,15 +1,18 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useState } from 'react';
-import { Task, Step, Component, FileUploadComponent, InputComponent, TextAreaComponent, TextComponent, AIAnalysisAction } from '../types/types';
+import { Task, Component, FileUploadComponent, InputComponent, TextAreaComponent, TextComponent, AIAnalysisAction, ProcessedFile, WebSearchAction } from '../types/types';
 import { sampleTasks } from '../data/sampleTasks';
 import { generateResponse } from '../lib/ai';
+import { Steps } from 'antd';
+import 'antd/dist/reset.css';
+import { webSearch } from '../lib/search';
 
 // Context Types
 interface TaskState {
     task: Task | null;
     currentStepIndex: number;
-    componentData: Record<string, any>;
+    componentData: Record<string, unknown>;
     actionResults: Record<string, string>;
     actionLoading: Record<string, boolean>;
     stepActionStatus: Record<string, 'pending' | 'loading' | 'completed' | 'error'>;
@@ -21,7 +24,7 @@ type TaskAction =
     | { type: 'CLEAR_TASK' }
     | { type: 'NEXT_STEP' }
     | { type: 'PREVIOUS_STEP' }
-    | { type: 'SET_COMPONENT_DATA'; payload: { componentId: string; data: any } }
+    | { type: 'SET_COMPONENT_DATA'; payload: { componentId: string; data: unknown } }
     | { type: 'SET_ACTION_RESULT'; payload: { actionId: string; result: string } }
     | { type: 'SET_ACTION_LOADING'; payload: { actionId: string; loading: boolean } }
     | { type: 'SET_STEP_ACTION_STATUS'; payload: { stepId: string; status: 'pending' | 'loading' | 'completed' | 'error' } }
@@ -45,12 +48,6 @@ const TaskContext = createContext<{
     executeStepActions: (stepId: string) => Promise<boolean>;
 } | null>(null);
 
-// Add interface for processed file data
-interface ProcessedFile {
-    name: string;
-    text: string;
-}
-
 // Utility function to extract text from files
 async function getTextFromFile(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -58,7 +55,7 @@ async function getTextFromFile(file: File): Promise<string> {
         reader.onload = (e) => {
             resolve(e.target?.result as string);
         };
-        reader.onerror = (e) => {
+        reader.onerror = () => {
             reject(new Error('Failed to read file'));
         };
         reader.readAsText(file);
@@ -67,7 +64,7 @@ async function getTextFromFile(file: File): Promise<string> {
 
 // Utility function for variable interpolation
 function interpolateVariables(text: string, state: TaskState): string {
-    return text.replace(/\${([^}]+)}/g, (match, componentId) => {
+    return text.replace(/\${([^}]+)}/g, (match: string, componentId: string): string => {
         // Check if this is a component result
         if (state.actionResults[componentId]) {
             return state.actionResults[componentId];
@@ -80,10 +77,31 @@ function interpolateVariables(text: string, state: TaskState): string {
                 return (data as ProcessedFile[]).map(file => file.text).join('\n\n');
             }
             // Handle other component data
-            return data;
+            return String(data);
         }
         return 'Waiting for data...';
     });
+}
+
+// Utility function to check if a component is ready
+function isComponentReady(component: Component, componentData: Record<string, unknown>): boolean {
+    switch (component.type) {
+        case 'input':
+        case 'textarea':
+            const value = componentData[component.id] as string | undefined;
+            return (component as InputComponent | TextAreaComponent).required ? Boolean(value?.trim()) : true;
+        case 'file-upload':
+            const files = componentData[component.id] as (File[] | ProcessedFile[]) | undefined;
+            const minFiles = (component as FileUploadComponent).minFiles;
+            return Boolean(files?.length && files.length >= minFiles);
+        case 'text':
+            return true; // Text components are always ready
+        case 'ai-analysis':
+        case 'web-search':
+            return true; // Actions are handled separately
+        default:
+            return true;
+    }
 }
 
 // Reducer
@@ -180,10 +198,43 @@ function TaskProvider({ children }: { children: React.ReactNode }) {
         });
 
         try {
-            // Get all AI analysis actions in this step
+            // Get all AI analysis and web search actions in this step
             const aiActions = step.components.filter(
                 (c): c is AIAnalysisAction => c.type === 'ai-analysis'
             );
+            const webSearchActions = step.components.filter(
+                (c): c is WebSearchAction => c.type === 'web-search'
+            );
+
+            // Execute web search actions first
+            for (const action of webSearchActions) {
+                dispatch({ 
+                    type: 'SET_ACTION_LOADING', 
+                    payload: { actionId: action.id, loading: true } 
+                });
+
+                try {
+                    const searchQuery = interpolateVariables(action.query, state);
+                    const results = await webSearch(searchQuery);
+                    
+                    const formattedResults = results.map((result, index) => 
+                        `${index + 1}. ${result.title}\n   ${result.link}\n   ${result.snippet}\n`
+                    ).join('\n');
+
+                    dispatch({ 
+                        type: 'SET_ACTION_RESULT', 
+                        payload: { 
+                            actionId: action.id, 
+                            result: `Search Results for: "${searchQuery}"\n\n${formattedResults}` 
+                        } 
+                    });
+                } finally {
+                    dispatch({ 
+                        type: 'SET_ACTION_LOADING', 
+                        payload: { actionId: action.id, loading: false } 
+                    });
+                }
+            }
 
             // Execute each AI action
             for (const action of aiActions) {
@@ -201,7 +252,18 @@ function TaskProvider({ children }: { children: React.ReactNode }) {
                     // Prepare the prompt with context and interpolate variables
                     let contextualPrompt = interpolateVariables(action.prompt, state);
                     if (uploadedFiles.length > 0) {
-                        contextualPrompt += `\nAnalyzing ${uploadedFiles.length} uploaded files: ${uploadedFiles.map((file: File) => file.name).join(', ')}`;
+                        const fileNames = uploadedFiles.map(data => {
+                            if (Array.isArray(data)) {
+                                return (data as (File | ProcessedFile)[])
+                                    .map(file => 'name' in file ? file.name : (file as File).name)
+                                    .join(', ');
+                            }
+                            return '';
+                        }).filter(Boolean);
+                        
+                        if (fileNames.length > 0) {
+                            contextualPrompt += `\nAnalyzing ${fileNames.length} uploaded files: ${fileNames}`;
+                        }
                     }
 
                     // Get input data from previous steps
@@ -214,16 +276,10 @@ function TaskProvider({ children }: { children: React.ReactNode }) {
                     }
 
                     // Define the response schema for structured output
-                    const responseSchema = {
-                        summary: "A brief summary of the analysis",
-                        keyFindings: ["Array of key findings"],
-                        recommendations: ["Array of recommendations"],
-                        nextSteps: ["Array of suggested next steps"],
-                        confidence: "Number between 0 and 1 indicating confidence in the analysis"
-                    };
+      
 
                     // Call the AI
-                    const result = await generateResponse(contextualPrompt, responseSchema, {
+                    const result = await generateResponse(contextualPrompt, {
                         temperature: 0.7,
                         maxTokens: 2048,
                         topP: 0.8,
@@ -252,7 +308,7 @@ Next Steps:
 ${parsedResult.nextSteps.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n')}
 
 Confidence Score: ${(parsedResult.confidence * 100).toFixed(1)}%`;
-                    } catch (error) {
+                    } catch {
                         // If parsing fails, use the raw result
                         formattedResult = result;
                     }
@@ -300,7 +356,16 @@ function useTask() {
     return context;
 }
 
-// Component Implementation
+// Root Component
+export default function Page() {
+    return (
+        <TaskProvider>
+            <TaskHome />
+        </TaskProvider>
+    );
+}
+
+// Main Parent Components
 const TaskHome = () => {
     const { state } = useTask();
 
@@ -313,7 +378,7 @@ const TaskHome = () => {
 
 const TaskInput = () => {
     const { dispatch } = useTask();
-    const [selectedSampleTask, setSelectedSampleTask] = useState('');
+    const [selectedSampleTask] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const handleSampleTaskSelect = (taskId: string) => {
@@ -324,7 +389,7 @@ const TaskInput = () => {
         }
     };
 
-    return (
+  return (
         <div className="max-w-4xl mx-auto py-12">
             <div className="text-center mb-12">
                 <h1 className="text-4xl font-bold text-gray-900 mb-4">Task Assistant</h1>
@@ -389,6 +454,10 @@ const TaskExecutor = () => {
         }
 
         if (hasActions && stepStatus !== 'completed') {
+            dispatch({ 
+                type: 'SET_STEP_ACTION_STATUS', 
+                payload: { stepId: currentStep.id, status: 'loading' } 
+            });
             const success = await executeStepActions(currentStep.id);
             if (success) {
                 dispatch({ type: 'NEXT_STEP' });
@@ -403,6 +472,16 @@ const TaskExecutor = () => {
     const hasProcessingFiles = currentStep.components.some(
         component => state.fileProcessingStatus[component.id]
     );
+
+    // Check if all required components are ready
+    const areComponentsReady = currentStep.components.every(
+        component => isComponentReady(component, state.componentData)
+    );
+
+    // Check if any actions are in progress
+    const isProcessing = hasProcessingFiles || 
+        state.stepActionStatus[currentStep.id] === 'loading' ||
+        currentStep.components.some(c => state.actionLoading[c.id]);
 
     return (
         <div className="max-w-4xl mx-auto py-8">
@@ -419,42 +498,16 @@ const TaskExecutor = () => {
             </div>
             
             <div className="mb-12">
-                <div className="flex items-center justify-between mb-4">
-                    {state.task?.steps.map((step: Step, index: number) => (
-                        <div key={step.id} className="flex-1 relative">
-                            <div className={`
-                                w-10 h-10 rounded-full flex items-center justify-center
-                                ${index === state.currentStepIndex 
-                                    ? 'bg-blue-500 text-white' 
-                                    : index < state.currentStepIndex
-                                        ? 'bg-green-500 text-white'
-                                        : 'bg-gray-200 text-gray-600'
-                                }
-                                ${index < state.task!.steps.length - 1 ? 'mb-2' : ''}
-                            `}>
-                                {index < state.currentStepIndex ? (
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                ) : (
-                                    index + 1
-                                )}
-                            </div>
-                            {index < (state.task?.steps.length || 0) - 1 && (
-                                <div className={`
-                                    absolute top-5 left-10 w-full h-0.5
-                                    ${index < state.currentStepIndex ? 'bg-green-500' : 'bg-gray-200'}
-                                `} />
-                            )}
-                            <p className={`
-                                text-sm mt-2 font-medium
-                                ${index === state.currentStepIndex ? 'text-blue-600' : 'text-gray-500'}
-                            `}>
-                                {step.title}
-                            </p>
-                        </div>
-                    ))}
-                </div>
+                <Steps
+                    current={state.currentStepIndex}
+                    items={state.task.steps.map((step, index) => ({
+                        status: index < state.currentStepIndex ? 'finish' :
+                                index === state.currentStepIndex ? 'process' :
+                                'wait',
+                        
+                    }))}
+                    progressDot={false}
+                />
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
@@ -462,7 +515,14 @@ const TaskExecutor = () => {
                 <p className="text-gray-600 mb-6">{currentStep.description}</p>
                 <div className="space-y-6">
                     {currentStep.components.map((component: Component) => (
-                        <TaskComponent key={component.id} component={component} />
+                        <div key={component.id}>
+                            <TaskComponent component={component} />
+                            {(component.type === 'input' || component.type === 'textarea') && 
+                             (component as InputComponent | TextAreaComponent).required && 
+                             !isComponentReady(component, state.componentData) && (
+                                <p className="mt-2 text-sm text-red-600">This field is required</p>
+                            )}
+                        </div>
                     ))}
                 </div>
             </div>
@@ -470,7 +530,7 @@ const TaskExecutor = () => {
             <div className="flex justify-between mt-8">
                 <button
                     onClick={() => dispatch({ type: 'PREVIOUS_STEP' })}
-                    disabled={state.currentStepIndex === 0 || hasProcessingFiles}
+                    disabled={state.currentStepIndex === 0 || isProcessing}
                     className="px-6 py-3 rounded-lg bg-gray-100 text-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
                 >
                     Previous
@@ -479,19 +539,25 @@ const TaskExecutor = () => {
                     onClick={handleNext}
                     disabled={
                         state.currentStepIndex === state.task.steps.length - 1 ||
-                        state.stepActionStatus[currentStep.id] === 'loading' ||
-                        hasProcessingFiles
+                        isProcessing ||
+                        !areComponentsReady
                     }
                     className="px-6 py-3 rounded-lg bg-blue-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors flex items-center space-x-2"
                 >
-                    {state.stepActionStatus[currentStep.id] === 'loading' || hasProcessingFiles ? (
+                    {isProcessing ? (
                         <>
                             <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span>{hasProcessingFiles ? 'Processing Files...' : 'Processing...'}</span>
+                            <span>
+                                {hasProcessingFiles ? 'Processing Files...' : 
+                                 state.stepActionStatus[currentStep.id] === 'loading' ? 'Running Actions...' : 
+                                 'Processing...'}
+                            </span>
                         </>
+                    ) : !areComponentsReady ? (
+                        <span>Please complete all required fields</span>
                     ) : (
                         <span>{state.currentStepIndex === state.task.steps.length - 1 ? 'Finish' : 'Next'}</span>
                     )}
@@ -501,20 +567,7 @@ const TaskExecutor = () => {
     );
 };
 
-const TaskStep = ({ step }: { step: Step }) => {
-    return (
-        <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-            <p className="text-gray-600 mb-4">{step.description}</p>
-            <div className="space-y-4">
-                {step.components.map((component: Component) => (
-                    <TaskComponent key={component.id} component={component} />
-                ))}
-            </div>
-        </div>
-    );
-};
-
+// Component Router
 const TaskComponent = ({ component }: { component: Component }) => {
     switch (component.type) {
         case 'file-upload':
@@ -527,11 +580,14 @@ const TaskComponent = ({ component }: { component: Component }) => {
             return <TaskTextComponent component={component as TextComponent} />;
         case 'ai-analysis':
             return <TaskActionComponent component={component as AIAnalysisAction} />;
+        case 'web-search':
+            return <WebSearchComponent component={component as WebSearchAction} />;
         default:
             return null;
     }
 };
 
+// Child Components
 const TaskFileUploadComponent = ({ component }: { component: FileUploadComponent }) => {
     const { state, dispatch } = useTask();
     const files = state.componentData[component.id] as (File[] | ProcessedFile[]) | undefined;
@@ -686,9 +742,9 @@ const TaskTextComponent = ({ component }: { component: TextComponent }) => {
     const text = interpolateVariables(component.text, state);
 
     return (
-        <div className="prose max-w-none">
-            {text}
-        </div>
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <pre className="whitespace-pre-wrap text-gray-700 font-mono text-sm">{text}</pre>
+            </div>
     );
 };
 
@@ -726,10 +782,36 @@ const TaskActionComponent = ({ component }: { component: AIAnalysisAction }) => 
     );
 };
 
-export default function Page() {
-    return (
-        <TaskProvider>
-            <TaskHome />
-        </TaskProvider>
-    );
+const WebSearchComponent = ({ component }: { component: WebSearchAction }) => {
+    const { state } = useTask();
+    const result = state.actionResults[component.id];
+    const loading = state.actionLoading[component.id];
+
+    if (loading) {
+        return (
+            <div className="p-6 bg-blue-50 rounded-lg">
+                <div className="flex items-center text-blue-600">
+                    <svg className="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="font-medium">Searching the web...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (result) {
+        return (
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <pre className="whitespace-pre-wrap text-gray-700 font-mono text-sm">{result}</pre>
+    </div>
+  );
 }
+
+    return (
+        <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 text-gray-500">
+            Waiting to start web search...
+        </div>
+    );
+};
