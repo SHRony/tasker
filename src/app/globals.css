@@ -76,3 +76,41 @@ body {
 .ant-steps .ant-steps-item-finish .ant-steps-item-tail::after {
     background: var(--primary-color) !important;
 } */
+
+/* Custom Styles for Ant Design Steps */
+.custom-steps .ant-steps-item-icon {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+  border-color: transparent !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+}
+
+.custom-steps .ant-steps-item-finish .ant-steps-item-icon {
+  background: linear-gradient(135deg, #10b981, #3b82f6) !important;
+}
+
+.custom-steps .ant-steps-item-wait .ant-steps-item-icon {
+  background: rgba(209, 213, 219, 0.6) !important;
+  box-shadow: none !important;
+}
+
+.custom-steps .ant-steps-item-title {
+  font-weight: 500 !important;
+}
+
+.custom-steps .ant-steps-item-finish .ant-steps-item-title,
+.custom-steps .ant-steps-item-active .ant-steps-item-title {
+  color: #1f2937 !important;
+}
+
+.custom-steps .ant-steps-item-wait .ant-steps-item-title {
+  color: #6b7280 !important;
+}
+
+.custom-steps .ant-steps-item-finish .ant-steps-item-tail::after,
+.custom-steps .ant-steps-item-process .ant-steps-item-tail::after {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important;
+}
+
+.custom-steps .ant-steps-item-wait .ant-steps-item-tail::after {
+  background-color: rgba(209, 213, 219, 0.4) !important;
+}

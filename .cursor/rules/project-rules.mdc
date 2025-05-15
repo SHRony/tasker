@@ -1,12 +1,12 @@
 ---
 description: 
-globs: *.tsx
-alwaysApply: false
+globs: 
+alwaysApply: true
 ---
 
 # Your rule content
-
-- Don't edit existing type definatinos, instead try writing the rest of the codes based on those type definations.
-- If need to edit a type defination ask user to give permission to do so.
-- For multiple types or components in a same file the parent should be on the top and then the childs. So that the code can be read from top to down and when need to take a deeper look into a specific child then can scroll down.
-- All the types should be declared in the types/types.ts file.
+- You must follow these rules
+- Before making any changes read the README.md and ARCHITECHTURE.md file
+- After making any chnges think about it there should be any change in the README.md or ARCHITECTURE.md file, and if needed then make the changes
+- Don't change the type declarations unless explecitly asked to do so, instead try to make remaining codes according to the type definations
+- Follow the convention mentioned in the clean code book by placing parent fucntions, components, types, above the child ones. This makes it easier to read the code from top to bottom.

@@ -1,263 +1,129 @@
-import { Task } from '../types/types';
+import { Task } from '../types/component_schema';
 
 export const sampleTasks: Task[] = [
     {
-        id: 'document-analysis',
-        title: 'Document Analysis',
-        description: 'Upload and analyze documents using AI',
+        id: "name-to-poem",
+        name: "Name to Poem Generator",
+        description: "Enter your name and get a personalized poem",
         steps: [
             {
-                id: 'upload-step',
-                title: 'Upload Documents',
-                description: 'Upload the documents you want to analyze',
+                id: "step1",
+                name: "Enter Your Name",
+                description: "Please enter your name below",
                 components: [
                     {
-                        id: 'file-upload-1',
-                        name: 'documents',
-                        type: 'file-upload',
-                        minFiles: 1,
-                        maxFiles: 5,
-                        maxFileSize: 10485760, // 10MB
-                        acceptedFileTypes: ['.pdf', '.doc', '.docx', '.txt']
+                        id: "name-input",
+                        name: "Name Input",
+                        type: "text-input",
+                        placeholder: "Enter your name",
+                        required: true
                     }
                 ]
             },
             {
-                id: 'analysis-step',
-                title: 'AI Analysis',
-                description: 'AI will analyze your documents',
+                id: "step2",
+                name: "Generate Poem",
+                description: "Generating your personalized poem...",
                 components: [
                     {
-                        id: 'analysis-1',
-                        name: 'document-analysis',
-                        type: 'ai-analysis',
-                        prompt: 'Analyze the uploaded documents for key insights. ${file-upload-1}'
+                        id: "poem-generator",
+                        name: "Poem Generator",
+                        type: "ai-analysis",
+                        prompt: "Write a short, friendly poem about the name ${name-input}. Make it 4 lines long and include the name in a creative way."
                     }
                 ]
             },
             {
-                id: 'results-step',
-                title: 'Analysis Results',
-                description: 'Review the AI analysis of your documents',
+                id: "step3",
+                name: "Display Poem",
+                description: "Here's your personalized poem!",
                 components: [
                     {
-                        id: 'results-text',
-                        name: 'analysis-results',
-                        type: 'text',
-                        text: 'Here are the key insights from your documents:'
-                    },
-                    {
-                        id: 'results-display',
-                        name: 'analysis-display',
-                        type: 'text',
-                        text: '${analysis-1}'
+                        id: "poem-display",
+                        name: "Poem Display",
+                        type: "text",
+                        text: "${poem-generator}"
                     }
                 ]
             }
         ]
     },
     {
-        id: 'web-research',
-        title: 'Web Research Assistant',
-        description: 'Research a topic using web search and AI analysis',
+        id: "simple-greeting",
+        name: "Simple Greeting",
+        description: "A simple task to demonstrate the system",
         steps: [
             {
-                id: 'topic-input',
-                title: 'Research Topic',
-                description: 'Enter the topic you want to research',
+                id: "step1",
+                name: "Enter Your Name",
+                description: "Please enter your name",
                 components: [
                     {
-                        id: 'topic-text',
-                        name: 'topic',
-                        type: 'input',
-                        placeholder: 'Enter your research topic',
+                        id: "name-input",
+                        name: "Name Input",
+                        type: "text-input",
+                        placeholder: "Enter your name",
                         required: true
-                    },
-                    {
-                        id: 'details-text',
-                        name: 'details',
-                        type: 'textarea',
-                        placeholder: 'Add any specific details or requirements',
-                        required: false
                     }
                 ]
             },
             {
-                id: 'search-step',
-                title: 'Web Search',
-                description: 'Searching the web for relevant information',
+                id: "step2",
+                name: "Display Greeting",
+                description: "Here's your greeting!",
                 components: [
                     {
-                        id: 'web-search-1',
-                        name: 'topic-search',
-                        type: 'web-search',
-                        query: 'Research about: ${topic-text}'
-                    }
-                ]
-            },
-            {
-                id: 'analysis-step',
-                title: 'AI Analysis',
-                description: 'Analyzing search results',
-                components: [
-                    {
-                        id: 'analysis-1',
-                        name: 'search-analysis',
-                        type: 'ai-analysis',
-                        prompt: 'Analyze the following research topic: ${topic-text}\n\nAdditional context: ${details-text}\n\nSearch results: ${web-search-1}'
+                        id: "greeting-display",
+                        name: "Greeting Display",
+                        type: "text",
+                        text: "Hello, ${name-input}! Welcome to Tasker!"
                     }
                 ]
             }
         ]
     },
     {
-        id: 'business-analysis',
-        title: 'Business Idea Analysis',
-        description: 'Analyze your business idea and get optimized search keywords for market research',
+        id: "topic-analysis",
+        name: "Topic Analysis",
+        description: "Analyze a topic using AI",
         steps: [
             {
-                id: 'step-1',
-                title: 'Enter Business Idea',
-                description: 'Describe your business idea in detail. Include target market, main features, and potential benefits.',
+                id: "step1",
+                name: "Enter Topic",
+                description: "Enter the topic you want to analyze",
                 components: [
                     {
-                        id: 'business-idea',
-                        name: 'Business Idea Input',
-                        type: 'textarea',
-                        placeholder: 'Enter your business idea here...',
+                        id: "topic-input",
+                        name: "Topic Input",
+                        type: "text-input",
+                        placeholder: "Enter your topic",
                         required: true
                     }
                 ]
             },
             {
-                id: 'step-2',
-                title: 'Generate Keywords',
-                description: 'AI will analyze your business idea and generate optimized search keywords',
+                id: "step2",
+                name: "AI Analysis",
+                description: "Analyzing your topic...",
                 components: [
                     {
-                        id: 'keyword-analysis',
-                        name: 'Keyword Analysis',
-                        type: 'ai-analysis',
-                        prompt: 'Generate a optimized web search query for this business idea. Do not include any other text. Here is the business idea:\n\n${business-idea}'
+                        id: "analysis",
+                        name: "Topic Analysis",
+                        type: "ai-analysis",
+                        prompt: "Analyze the following topic in detail: ${topic-input}\n\nProvide:\n1. Key points\n2. Potential implications\n3. Related concepts"
                     }
                 ]
             },
             {
-                id: 'step-3',
-                title: 'Review Keywords',
-                description: 'Review the AI-generated keywords for your market research',
+                id: "step3",
+                name: "Display Analysis",
+                description: "Here's your analysis!",
                 components: [
                     {
-                        id: 'keywords-intro',
-                        name: 'Keywords Introduction',
-                        type: 'text',
-                        text: 'Here are the key search terms for your market research:'
-                    },
-                    {
-                        id: 'keywords-display',
-                        name: 'Generated Keywords',
-                        type: 'text',
-                        text: '${keyword-analysis}'
-                    }
-                ]
-            },
-            {
-                id: 'step-4',
-                title: 'Market Research',
-                description: 'Performing web search using the generated keywords',
-                components: [
-                    {
-                        id: 'market-search',
-                        name: 'Market Research',
-                        type: 'web-search',
-                        query: '${keyword-analysis}'
-                    }
-                ]
-            },
-            {
-                id: 'step-5',
-                title: 'Research Results',
-                description: 'Review the market research findings',
-                components: [
-                    {
-                        id: 'search-intro',
-                        name: 'Search Introduction',
-                        type: 'text',
-                        text: 'Here are the market research findings for your business idea:'
-                    },
-                    {
-                        id: 'search-results',
-                        name: 'Search Results',
-                        type: 'text',
-                        text: '${market-search}'
-                    }
-                ]
-            },
-            {
-                id: 'step-6',
-                title: 'Business Analysis',
-                description: 'AI will analyze your business idea using market research data',
-                components: [
-                    {
-                        id: 'business-analysis',
-                        name: 'Business Analytics',
-                        type: 'ai-analysis',
-                        prompt: `Analyze this business idea comprehensively using the provided market research. Create a detailed business analysis report with the following sections:
-
-1. Market Analysis:
-   - Market size and growth potential (use charts)
-   - Target market segments (create a table)
-   - Competitor analysis (tabular format)
-   - Market trends and opportunities
-
-2. SWOT Analysis:
-   - Present in a clear table format
-   - Detailed explanations for each point
-
-3. Financial Projections:
-   - Estimated startup costs (table)
-   - Revenue projections (chart)
-   - Break-even analysis
-   - Key financial metrics
-
-4. Risk Assessment:
-   - Risk matrix (table format)
-   - Mitigation strategies
-
-5. Implementation Timeline:
-   - Present as a roadmap or timeline chart
-   - Key milestones and deadlines
-
-6. Success Metrics:
-   - KPIs in table format
-   - Monitoring and evaluation framework
-
-Format the output using markdown tables, bullet points, and clear sections.
-
-Business Idea:
-\${business-idea}
-
-Market Research Results:
-\${market-search}`
-                    }
-                ]
-            },
-            {
-                id: 'step-7',
-                title: 'Final Analysis Report',
-                description: 'Review the comprehensive business analysis',
-                components: [
-                    {
-                        id: 'analysis-intro',
-                        name: 'Analysis Introduction',
-                        type: 'text',
-                        text: 'Here is your comprehensive business analysis report:'
-                    },
-                    {
-                        id: 'analysis-results',
-                        name: 'Analysis Results',
-                        type: 'text',
-                        text: '${business-analysis}'
+                        id: "analysis-display",
+                        name: "Analysis Display",
+                        type: "text",
+                        text: "${analysis}"
                     }
                 ]
             }

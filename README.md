@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🧠 Tasker
 
-## Getting Started
+**Tasker** is a platform for running structured, interactive, AI-powered tasks.
 
-First, run the development server:
+Each task is defined using a simple JSON format that describes a series of steps. Users go through these steps one by one, interacting with AI, uploading files, providing input, and receiving results — all within a guided experience.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ What Tasker Does
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Takes a **JSON-defined task** as input
+- Allows users to run the task step by step
+- Each step contains interactive components
+- Users provide input, view outputs, and continue through the task
+- AI, API, and file-based processing can be built into the flow
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🔧 How It Works (At a High Level)
 
-To learn more about Next.js, take a look at the following resources:
+1. A task is created using a predefined JSON format
+2. The user runs the task inside Tasker
+3. The task guides them through multiple steps
+4. Each step may include:
+   - Showing text or output
+   - Asking for input
+   - Making AI or API calls
+5. The task completes when all steps are finished
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠 Task Structure
 
-## Deploy on Vercel
+- Tasks are made of **steps**
+- Steps are made of **components**
+- Components handle display, input, or actions
+- Each task is interactive — the user drives it by engaging with each step
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📁 For Developers
+
+If you're looking for implementation details or want to understand how Tasker is built under the hood, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+---
+
+*This README will grow as the project evolves.*
