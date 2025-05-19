@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Task, Step } from '../../types/component_schema';
 import { sampleTasks } from '../../data/sampleTasks';
 import { Steps } from 'antd';
@@ -45,9 +45,11 @@ const TaskExecutor: React.FC<{ task: Task }> = ({ task }) => {
         }
     };
 
-    const getRecords = (key: string): string | undefined => {
-        return records[key];
-    };
+    // Memoize getRecords so it only changes when records changes
+    const getRecords = useCallback(
+        (key: string) => records[key],
+        [records]
+    );
 
     return (
         <RecordsProvider getRecords={getRecords}>
@@ -82,20 +84,54 @@ const StepExecutor: React.FC<StepExecutorProps> = ({ step, onStepComplete }) => 
     const [records, setRecords] = useState<Record<string, string>>({});
     const [readyMap, setReadyMap] = useState<Record<string, boolean>>({});
 
+    // Debug: Log props and state on every render
+    console.log('[StepExecutor] render', {
+        step,
+        onStepComplete,
+        records,
+        readyMap,
+        isStepReady: step.components.every(comp => readyMap[comp.id]),
+    });
+
+    // Log when component mounts and when step or its components change
+    React.useEffect(() => {
+        console.log('[StepExecutor] mounted or step/components changed', { step, components: step.components });
+    }, [step, step.components]);
+
+    // Log when records or readyMap change
+    React.useEffect(() => {
+        console.log('[StepExecutor] records changed', records);
+    }, [records]);
+    React.useEffect(() => {
+        console.log('[StepExecutor] readyMap changed', readyMap);
+    }, [readyMap]);
+
     const putRecord = (key: string, value: string) => {
-        setRecords(prev => {
-            const newRecords = { ...prev };
-            newRecords[key] = value;
-            return newRecords;
-        });
+        if(records[key] !== value) {
+            setRecords(prev => {
+                const newRecords = { ...prev };
+                newRecords[key] = value;
+                console.log('[StepExecutor] putRecord', { key, value, newRecords });
+                return newRecords;
+            });
+        }
     };
 
     const setReady = (componentId: string, ready: boolean) => {
-        setReadyMap(prev => ({ ...prev, [componentId]: ready }));
+        if(readyMap[componentId] !== ready) {
+            setReadyMap(prev => {
+                const newReadyMap = { ...prev, [componentId]: ready };
+                console.log('[StepExecutor] setReady', { componentId, ready, newReadyMap });
+                return newReadyMap;
+            });
+        }
     };
 
     const isStepReady = step.components.every(comp => readyMap[comp.id]);
-
+    React.useEffect(() => {
+        console.log('[StepExecutor] isStepReady changed', isStepReady);
+    }, [isStepReady]);
+    
     return (
         <div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-[#1677ff]">{step.name}</h2>
