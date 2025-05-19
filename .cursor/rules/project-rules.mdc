@@ -1,7 +1,7 @@
 ---
 description: 
-globs: 
-alwaysApply: true
+globs: *.tsx,*ts,*.md,*.css
+alwaysApply: false
 ---
 
 # Your rule content
