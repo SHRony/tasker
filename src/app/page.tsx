@@ -6,6 +6,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { CodeEditorCard } from '@/components/CircularCodeStack';
 import { HeroStack } from '@/components/HeroStack';
 import { HeroComponentPreview } from '@/components/HeroComponentPreview';
+import Image from 'next/image';
 
 // Dummy data for testimonials, features, FAQ, etc.
 const faqs = [
@@ -179,17 +180,37 @@ interface FAQ {
 function RevealSection({ children, className = '', style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
     const ref = useRef(null);
     const { scrollYProgress } = useScroll({ target: ref, offset: ['0.2 1', '0.8 0'] });
+    
+    // Enhanced scroll animations
     const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
     const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.95, 1, 1, 0.95]);
+    const y = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [50, 0, 0, -50]);
+    const rotateX = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [15, 0, 0, -15]);
+    
     return (
         <motion.div
             ref={ref}
             className={className}
-            style={{ ...style, opacity, scale }}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            style={{ 
+                ...style, 
+                opacity, 
+                scale,
+                y,
+                rotateX,
+                transformPerspective: 1000,
+                transformOrigin: 'center center'
+            }}
+            initial={{ opacity: 0, scale: 0.95, y: 50, rotateX: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -50, rotateX: -15 }}
+            transition={{ 
+                duration: 0.7, 
+                ease: [0.4, 0, 0.2, 1],
+                opacity: { duration: 0.5 },
+                scale: { duration: 0.5 },
+                y: { duration: 0.5 },
+                rotateX: { duration: 0.5 }
+            }}
         >
             {children}
         </motion.div>
@@ -237,11 +258,14 @@ function HeroSection() {
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-start overflow-hidden font-sans">
             {/* Blue background image */}
-            <img
+            <Image
                 src="/hero.png"
                 alt="Hero background"
                 className="absolute inset-0 w-full h-full object-cover object-center z-0"
                 style={{ filter: 'brightness(1) blur(0px)' }}
+                layout='responsive'
+                width={1920}
+                height={1080}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-blue-100/80 via-blue-200/60 to-transparent z-10" />
             {/* Top nav and logo */}
